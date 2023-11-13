@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Screen Recorder</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            background-color: #333;
+            color: #fff;
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        video {
+            max-width: 100%;
+            margin-top: 20px;
+            max-height: 60vh;
+        }
+
+        .button {
+            display: inline-block;
+            margin: 10px;
+            font-size: 14px;
+            padding: 15px 25px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            outline: none;
+            color: #fff;
+            background-color: #3498db;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 9px #2980b9;
+        }
+
+        .button:hover {
+            background-color: #2980b9;
+        }
+
+        .button:active {
+            background-color: #2980b9;
+            box-shadow: 0 5px #2980b9;
+            transform: translateY(4px);
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Screen Recorder</h1>
+        <video id="recorded" controls></video>
+        <div id="buttons">
+            <button id="start" class="button" onclick="startRecording()">Start Recording</button>
+            <button id="stop" class="button" onclick="stopRecording()">Stop Recording</button>
+        </div>
+        <a id="download" download="recorded-video.webm" href="#" style="display: none;"></a>
+        <button id="download-button" class="button" onclick="downloadVideo()" style="display: none;">Download Video</button>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let recordedChunks = [];
+        let screenStream;
+
+        const startButton = document.getElementById('start');
+        const stopButton = document.getElementById('stop');
+        const recordedVideo = document.getElementById('recorded');
+        const downloadLink = document.getElementById('download');
+        const downloadButton = document.getElementById('download-button');
+
+        async function startRecording() {
+            screenStream = await navigator.mediaDevices.getDisplayMedia({
+                video: { mediaSource: 'screen' },
+            });
+
+            mediaRecorder = new MediaRecorder(screenStream);
+
+            mediaRecorder.ondataavailable = (event) => {
+                if (event.data.size > 0) {
+                    recordedChunks.push(event.data);
+                }
+            };
+
+            mediaRecorder.onstop = () => {
+                const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                recordedChunks = [];
+                recordedVideo.src = URL.createObjectURL(blob);
+                recordedVideo.controls = true;
+                startButton.style.display = 'block';
+                stopButton.style.display = 'none';
+                downloadLink.style.display = 'inline-block';
+                downloadLink.href = URL.createObjectURL(blob);
+                downloadButton.style.display = 'inline-block';
+            };
+
+            // Stop recording if screen sharing stops
+            screenStream.getVideoTracks()[0].addEventListener('ended', () => {
+                stopRecording();
+            });
+
+            startButton.style.display = 'none';
+            stopButton.style.display = 'block';
+            downloadLink.style.display = 'none';
+            downloadButton.style.display = 'none';
+
+            mediaRecorder.start();
+        }
+
+        function stopRecording() {
+            mediaRecorder.stop();
+            // Stop screen sharing
+            screenStream.getTracks().forEach(track => track.stop());
+        }
+
+        function downloadVideo() {
+            downloadLink.click();
+        }
+    </script>
+</body>
+</html>
