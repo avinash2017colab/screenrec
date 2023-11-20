@@ -89,7 +89,7 @@
                     audio: true, // Enable audio capture
                 });
 
-                mediaRecorder = new MediaRecorder(screenStream, { mimeType: 'video/mp4' });
+                mediaRecorder = new MediaRecorder(screenStream);
 
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) {
